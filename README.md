@@ -11,7 +11,7 @@ Classify audio with pretrained AD-Mamba models covering **527 AudioSet sound eve
 
 Download the desired checkpoint from [Release v0.3.0](https://github.com/MyParadise21/AD-Mamba/releases/tag/v0.3.0), create `checkpoints/` if needed, and place it there. Weights are distributed as GitHub Release assets, separately from the Git source tree and Python package. Use the matching `v0.3.0` source tag for this release.
 
-SHA-256 checksums are provided in [SHA256SUMS](SHA256SUMS) and as a release attachment. Only load trusted checkpoints and verify their checksums before use. The mAP values above are historical single-model evaluation results; full AudioSet evaluation has not been rerun for this release.
+The mAP values above are historical single-model evaluation results; full AudioSet evaluation has not been rerun for this release.
 
 ## Installation
 
