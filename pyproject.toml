@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ad-mamba-inference"
+version = "0.3.0"
+description = "Pretrained AD-Mamba audio classification"
+requires-python = ">=3.10,<3.11"
+dependencies = ["torch==2.0.0", "torchaudio==2.0.0", "numpy==1.23.0", "soundfile==0.13.1"]
+
+[project.optional-dependencies]
+train = ["scikit-learn==1.5.0", "scipy==1.13.1"]
+
+[project.scripts]
+ad-mamba = "ad_mamba.__main__:main"
+ad-mamba-evaluate = "ad_mamba.evaluate:main"
+ad-mamba-train = "ad_mamba.train:main"
+
+[tool.setuptools]
+packages = ["ad_mamba"]
+license-files = ["LICENSE"]
+
+[tool.setuptools.package-data]
+ad_mamba = ["class_labels_indices.csv"]

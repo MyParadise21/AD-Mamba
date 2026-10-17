@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.local/
+# Weights belong in GitHub Releases (or explicitly configured Git LFS).
+checkpoints/*.pth
+checkpoints/*.pt
+runs/
