@@ -1,6 +1,5 @@
-# Python 3.10; install matching CUDA builds first (see README).
-# VMamba's optional oflex extension is built separately.
-torch==2.0.0
-torchaudio==2.0.1
-numpy==1.23.0
-soundfile==0.13.1
+# Install matching CUDA builds of torch and torchaudio.
+torch>=2.0,<2.9
+torchaudio>=2.0.1,<2.9
+numpy>=1.23,<2
+soundfile>=0.13.1
