@@ -4,70 +4,68 @@ Pretrained AD-Mamba models for **527 AudioSet sound events**. Run inference on y
 
 ## Pretrained models
 
-Small and Medium differ in model size. Both were trained on GPUs and use the same installation steps.
-
-| Model | Approx. parameters | AudioSet mAP | Checkpoint |
+| Model | Approx. parameters | AudioSet mAP | Download |
 |---|---:|---:|---|
-| Small (default) | 30M | 50.3% | `ad_mamba_small.pt` |
-| Medium | 49M | 50.6% | `ad_mamba_medium.pt` |
-
-Place the checkpoint files in `checkpoints/`. Weights will be distributed as GitHub Release assets, separately from the Python package. The mAP values above are historical single-model evaluation results; full AudioSet evaluation has not been rerun for this release.
+| Small (default) | 30M | 50.3% | [Checkpoint](https://github.com/MyParadise21/AD-Mamba/releases/download/pretrained/ad_mamba_small.pt) |
+| Medium | 49M | 50.6% | [Checkpoint](https://github.com/MyParadise21/AD-Mamba/releases/download/pretrained/ad_mamba_medium.pt) |
 
 ## Installation
 
-Use **Python 3.10+** and an NVIDIA GPU. Install CUDA-enabled PyTorch and matching TorchAudio using the [official instructions](https://pytorch.org/get-started/locally/), then install the remaining dependencies:
+Recommended: **Python 3.11** and an NVIDIA GPU.
 
 ```bash
+git clone https://github.com/MyParadise21/AD-Mamba.git
+cd AD-Mamba
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
 python -m pip install -r requirements.txt
 ```
 
-If you already have compatible PyTorch and TorchAudio installed, keep your existing environment. The examples below use the included PyTorch implementation and do not require compiling extra CUDA extensions.
+Use a driver compatible with the selected CUDA wheels. No custom CUDA extensions are required. Existing environments need matching PyTorch/TorchAudio versions satisfying `requirements.txt` (both `<2.9`).
 
 ## Inference
 
-Replace `example.wav` with the path to your own audio file:
+From the repository directory, download Pretrained models and run inference. Replace `example.wav` with your own audio file.
 
 ```bash
+mkdir -p checkpoints
+curl -fL https://github.com/MyParadise21/AD-Mamba/releases/download/pretrained/ad_mamba_small.pt -o checkpoints/ad_mamba_small.pt
 python inference.py --audio example.wav --model small --device cuda
 ```
 
-This selects the Small model on GPU, preprocesses the audio, and prints the **top 5 labels and scores**.
-
-Select Medium with the same GPU settings, classify multiple files, or save the results as JSON:
+This prints the **top 5 labels and sigmoid scores**. For Medium, download its checkpoint above to `checkpoints/ad_mamba_medium.pt` and use `--model medium`.
 
 ```bash
-python inference.py --audio example.wav --model medium --device cuda
-python inference.py --audio a.wav b.wav --batch-size 2 --device cuda
-python inference.py --audio example.wav --output predictions.json --device cuda
+python inference.py --audio a.wav b.wav --batch-size 2 --device cuda --output predictions.json
 ```
 
-Use `--top-k 10` to show more labels, or `--checkpoint /path/to/model.pt` if your weights are stored elsewhere. Run `python inference.py --help` for all options.
+Use `--top-k 10` for more labels or `--checkpoint /absolute/path/to/model.pt` for weights elsewhere. See `python inference.py --help` for all options.
 
 ### Use in your own Python code
 
-Run from the repository directory, or install the local package with `python -m pip install .`:
+Run from the repository directory, or install with `python -m pip install .`. Use an absolute checkpoint path when calling the installed package from another directory; weights are not included in the package.
 
 ```python
 from ad_mamba import AudioClassifier
 
-classifier = AudioClassifier(checkpoint="checkpoints/ad_mamba_small.pt", device="cuda")
+classifier = AudioClassifier(checkpoint="/absolute/path/to/ad_mamba_small.pt", device="cuda")
 for item in classifier.predict("example.wav"):
     print(item["label"], item["score"])
 ```
 
-The model is loaded once and can be reused. For Medium, set `model="medium"` and use its checkpoint.
+Reuse the classifier across files. For Medium, set `model="medium"` and supply its checkpoint.
 
-**Notes:** This is multi-label sound classification, not speech transcription. Multiple labels may apply, and scores do not need to sum to one. Inputs are processed as roughly 10-second clips; longer audio is truncated to the first 1024 frames, without sliding-window inference. The supported labels are listed in `ad_mamba/class_labels_indices.csv`.
+**Notes:** This is multi-label sound classification, not transcription. Scores need not sum to one; top-k results are rankings, not thresholded detections. Audio is padded or truncated to 1024 frames (roughly 10 seconds), without sliding windows. Labels are in `ad_mamba/class_labels_indices.csv`.
 
 ## Training and evaluation
 
-The basic workflow is: **load labeled audio, initialize the student from a checkpoint, fine-tune with classification loss and optional distillation, then validate and save the best model**. This is a simplified fine-tuning reference, not a full reproduction of the paper's three-stage training pipeline.
-
-Install the additional dependencies with `python -m pip install -r requirements-train.txt`. Use JSON data lists such as `{"data":[{"wav":"audio/example.wav","labels":"/m/09x0r"}]}`. Relative audio paths are resolved from the JSON file's directory; labels are AudioSet MIDs.
+Install `requirements-train.txt`. Provide JSON lists such as `{"data":[{"wav":"audio/example.wav","labels":"/m/09x0r"}]}`; audio paths are relative to the JSON file and labels are AudioSet MIDs.
 
 ```bash
+python -m pip install -r requirements-train.txt
 python train.py --checkpoint checkpoints/ad_mamba_small.pt --train-data train.json --val-data eval.json --output-dir runs/finetune --device cuda
-python evaluate.py --data eval.json --output runs/metrics.json --device cuda
+python evaluate.py --checkpoint runs/finetune/best.pt --data eval.json --output runs/metrics.json --device cuda
 ```
 
-Training saves `best.pt` and `last.pt`; evaluation reports mAP. Optional distillation uses `--teacher teacher.ts.pt`: provide a trusted TorchScript teacher accepting normalized `[B,1024,128]` inputs and returning `[B,527]` logits in the same label order. See `--help` for other options.
+Training saves `best.pt` and `last.pt`; the command above evaluates the fine-tuned checkpoint and reports mAP. Optional `--teacher teacher.ts.pt` accepts a trusted TorchScript teacher mapping normalized `[B,1024,128]` inputs to `[B,527]` logits in the same label order.
