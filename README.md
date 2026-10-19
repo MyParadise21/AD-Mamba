@@ -20,8 +20,6 @@ python -m pip install torch==2.0.0 torchaudio==2.0.0
 python -m pip install -r requirements.txt
 ```
 
-For NVIDIA GPUs, replace `/cpu` with `/cu118` in the first command. If these dependencies are already installed, you can skip this step. No custom Mamba extension needs to be compiled.
-
 ## Inference
 
 Replace `example.wav` with the path to your own audio file:
